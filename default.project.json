@@ -1,0 +1,58 @@
+{
+  "name": "Game",
+  "tree": {
+    "$className": "DataModel",
+
+    "Players": {
+      "$properties": {
+        "RespawnTime": 7
+      } 
+    },
+
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/Shared",
+        "Assets": {
+          "$path": "Assets", 
+          "$ignoreUnknownInstances": true
+        } 
+      },
+      "Packages": {
+        "$path": "Packages"
+      }
+    },
+
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/Server"
+      },
+      "Packages": {
+        "$path": "ServerPackages"
+      }
+    },
+
+    "ServerStorage": {
+      "$ignoreUnknownInstances": true,
+      "Assets": {
+        "$path": "ServerAssets", 
+        "$ignoreUnknownInstances": true
+      } 
+    },
+
+    "StarterGui": {
+      "$ignoreUnknownInstances": true,
+      "$properties": {
+        "ScreenOrientation": "LandscapeSensor"
+      }
+    },
+
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$ignoreUnknownInstances": true,
+          "$path": "src/Client"
+        }
+      }
+    }
+  }
+}

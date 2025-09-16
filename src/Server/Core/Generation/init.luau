@@ -1,3 +1,5 @@
+-- lame ass mountain generation w biomes 
+
 -- dependencies
 
 local LocalizationService = game:GetService("LocalizationService")
@@ -17,7 +19,7 @@ local ORIGIN = Vector3.new(0, 50, 0) -- origin of the world
 local SEED = math.random(1, 100000) -- random seed for noise
 local SLOPE_FACTOR = 0.3 -- how much the height changes based on distance from center
 
-local TILE_COUNT = 50 -- how many tiles to generate (50x50)
+local TILE_COUNT = 100 -- how many tiles to generate (50x50)
 local TILE_SIZE = 75 -- size of each tile
 local HEIGHT_SCALE = 200 -- how much the height changes based on noise
 
@@ -25,6 +27,46 @@ local Scope = Trove.new()
 local Chunk = require(script.Chunk)
 
 local frequency = 0.05 -- current frequency of the noise
+
+-- biome system
+local BIOMES = {
+    DESERT = {
+        name = "Desert",
+        color = Color3.fromRGB(255, 200, 100),
+        material = Enum.Material.Sand,
+        minHeight = 0,
+        maxHeight = 100,
+        minDistance = 0,
+        maxDistance = 10000
+    },
+    FOREST = {
+        name = "Forest", 
+        color = Color3.fromRGB(50, 150, 50),
+        material = Enum.Material.Grass,
+        minHeight = 100,
+        maxHeight = 500,
+        minDistance = 0,
+        maxDistance = 10000
+    },
+    MOUNTAINS = {
+        name = "Mountains",
+        color = Color3.fromRGB(120, 120, 120),
+        material = Enum.Material.Rock,
+        minHeight = 500,
+        maxHeight = 600,
+        minDistance = 0,
+        maxDistance = 10000
+    },
+    TUNDRA = {
+        name = "Tundra",
+        color = Color3.fromRGB(200, 220, 255),
+        material = Enum.Material.Snow,
+        minHeight = 600,
+        maxHeight = 10000,
+        minDistance = 0,
+        maxDistance = 10000
+    },
+}
 
 -- methods
 
@@ -49,6 +91,22 @@ function Service:Generate()
 
         local pool = ReplicatedStorage.Shared.Assets:WaitForChild("Debris"):GetChildren() -- get a random debrsi from the pool
         return pool[math.random(1, #pool)]:Clone()
+    end
+
+    local function getBiome(height, distance)
+        for biomeName, biome in pairs(BIOMES) do
+            if height >= biome.minHeight and height <= biome.maxHeight and 
+               distance >= biome.minDistance and distance <= biome.maxDistance then
+                return biome
+            end
+        end
+        return BIOMES.FOREST -- default biome
+    end
+
+    local function applyBiomeToTile(tile, biome)
+        -- apply biome color and material to tile parts
+        tile.Top.Color = biome.color
+        tile.Top.Material = biome.material
     end
 
     local halfCount = math.floor(TILE_COUNT / 2) -- half of the tile count so i can start from the center
@@ -77,7 +135,11 @@ function Service:Generate()
         local height = getHeight(gx, gy, SEED, distance)
         local position = ORIGIN + Vector3.new(x, height, z)
 
-        tile.Name = index
+        -- determine biome and apply it
+        local biome = getBiome(height, distance)
+        applyBiomeToTile(tile, biome)
+
+        tile.Name = index .. "_" .. biome.name
         tile.Parent = workspace
         tile:PivotTo(CFrame.new(position))
 
@@ -110,10 +172,20 @@ function Service:Generate()
             end
         end
 
+    if biome.name == "Desert" then
+            -- placeholdr  sand particles
+            local particles = Instance.new("ParticleEmitter")
+            particles.Texture = "rbxasset://textures/particles/smoke_main.dds"
+            particles.Color = ColorSequence.new(Color3.fromRGB(255, 200, 100))
+            particles.Parent = tile.Top
+        end
+
+        print(biome.name, height)
+
         task.wait()
     end
 
-    print(#cells)
+    print("Generated " .. #cells .. " tiles with biome system")
 end
 
 function Service:Init()

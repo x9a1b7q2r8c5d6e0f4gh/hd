@@ -68,8 +68,6 @@ local BIOMES = {
     },
 }
 
--- methods
-
 -- generates height variation using perlin noise
 local function calculateNoiseHeight(x, y, seed, currentFrequency)
     local noiseX = x * currentFrequency
@@ -168,20 +166,17 @@ local function getBiome(height, distance)
     return BIOMES.FOREST -- default biome
 end
 
-
-
 -- makes the tile look like its biome (color and material)
 local function applyBiomeToTile(tile, biome)
     local topPart = tile.Top
     local biomeColor = biome.color
     local biomeMaterial = biome.material
-    
-    -- apply properties
+
     topPart.Color = biomeColor
     topPart.Material = biomeMaterial
 end
 
--- calculates how far a tile is from the center (manhattan distance)
+-- calculates how far a tile is from the center
 local function calculateTileDistance(gx, gy)
     local absoluteX = math.abs(gx)
     local absoluteY = math.abs(gy)
@@ -236,14 +231,14 @@ local function calculateWorldPosition(gx, gy)
     return worldX, worldZ
 end
 
--- gets actual 3D distance from center (for biome calculations)
-local function calculateDistance3D(x, z)
+-- gets distance from center
+local function getDistance(x, z)
     local positionVector = Vector3.new(x, 0, z)
     local distance3D = positionVector.Magnitude
     return distance3D
 end
 
--- creates a unique string ID for each tile
+-- creates a unique index for each tile
 local function createTileIndex(gx, gy)
     local indexString = `{gx},{gy}`
     return indexString
@@ -318,24 +313,6 @@ local function placeDebrisOnTile(tile, debris)
     debris.Parent = tile
 end
 
--- adds special effects if this tile is in the desert
-local function processDesertBiome(tile, biome)
-    local isDesertBiome = biome.name == "Desert"
-    if isDesertBiome then
-        local particleEmitter = Instance.new("ParticleEmitter")
-        local particleTexture = "rbxasset://textures/particles/smoke_main.dds"
-        local particleColorR = 255
-        local particleColorG = 200
-        local particleColorB = 100
-        local particleColor = Color3.fromRGB(particleColorR, particleColorG, particleColorB)
-        local particleColorSequence = ColorSequence.new(particleColor)
-        
-        particleEmitter.Texture = particleTexture
-        particleEmitter.Color = particleColorSequence
-        particleEmitter.Parent = tile.Top
-    end
-end
-
 -- main function that generates the entire world
 function Service:Generate()
     Scope:Clean()
@@ -352,7 +329,7 @@ function Service:Generate()
         local index = createTileIndex(gx, gy)
 
         local x, z = calculateWorldPosition(gx, gy)
-        local distance = calculateDistance3D(x, z)
+        local distance = getDistance(x, z)
         local height = getHeight(gx, gy, SEED, distance)
         local position = calculateFinalPosition(x, height, z)
 
@@ -378,8 +355,6 @@ function Service:Generate()
         if hasDebris then
             placeDebrisOnTile(tile, debris)
         end
-
-        processDesertBiome(tile, biome)
 
         local biomeName = biome.name
         print(biomeName, height)

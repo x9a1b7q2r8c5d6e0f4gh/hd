@@ -363,12 +363,10 @@ function Service:Generate()
     end
 end
 
--- called when the service initializes (nothing to do here)
 function Service:Init()
-	
+
 end
 
--- called when the service starts up
 function Service:Start()
     self:Generate() -- regenerate the world
 end

@@ -301,7 +301,7 @@ function Service:Generate()
         local tileName = `{index}_{biome.name}`
         tile.Name = tileName
         tile.Parent = workspace
-        
+    
         local tileCFrame = CFrame.new(position)
         tile:PivotTo(tileCFrame)
 
@@ -316,7 +316,7 @@ function Service:Generate()
         if hasDebris then
             local debrisPosition, debrisRotation = getDebrisPositionAndRotation(tile)
             local finalDebrisCFrame = CFrame.new(debrisPosition) * debrisRotation
-            
+   
             debris:PivotTo(finalDebrisCFrame)
             debris.Parent = tile
         end

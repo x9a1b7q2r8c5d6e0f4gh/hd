@@ -1,10 +1,7 @@
 local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
-local ServerStorage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
-local HTTPService = game:GetService('HttpService')
-local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Promise = require(ReplicatedStorage.Packages.Promise)
@@ -22,13 +19,9 @@ local PlayerProfiles = {}
 
 local PlayerReplicaToken = Replica.Token('Player')
 
-----------------------------------------------------------------------
 
 local Service = setmetatable({Name = script.Name}, require(ReplicatedStorage.Shared.Framework.Server))
-
 Service.PlayerDataLoaded = Signal.new()
-
-----------------------------------------------------------------------
 
 function Service:Load(player: Player)
 	local data = setmetatable({trove = Trove.new(), data = {}}, PlayerDataMethods)
@@ -156,10 +149,6 @@ function Service:Release(player: Player)
 	end
 end
 
-function Service:GetStore()
-	return PlayerStore
-end
-
 function Service:Get(player: Player, timeout: number?)
 	assert(typeof(player) == 'Instance', 'argument #1 must be a player object, got', player)
 
@@ -175,8 +164,6 @@ function Service:Get(player: Player, timeout: number?)
 
 	return data
 end
-
-----------------------------------------------------------------------
 
 function Service:Start()
 	for _, player in Players:GetPlayers() do

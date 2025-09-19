@@ -68,26 +68,18 @@ local BIOMES = {
     },
 }
 
--- generates height variation using perlin noise
-local function calculateNoiseHeight(x, y, seed, currentFrequency)
-    local noiseX = x * currentFrequency
-    local noiseY = y * currentFrequency
-    local noiseSeed = seed / 1000
-    local rawNoise = math.noise(noiseX, noiseY, noiseSeed)
-    local scaledNoise = rawNoise * HEIGHT_SCALE
-    return scaledNoise
-end
-
--- makes terrain higher as you move away from center
-local function calculateDistanceHeight(distance)
-    local baseSlopeHeight = distance * SLOPE_FACTOR
-    return baseSlopeHeight
-end
-
 -- combines noise and distance to get final tile height
 local function getHeight(x, y, seed: number, distance: number)
-    local noiseHeight = calculateNoiseHeight(x, y, seed, frequency)
-    local distanceHeight = calculateDistanceHeight(distance)
+    -- generates height variation using perlin noise
+    local noiseX = x * frequency
+    local noiseY = y * frequency
+    local noiseSeed = seed / 1000
+    local rawNoise = math.noise(noiseX, noiseY, noiseSeed)
+    local noiseHeight = rawNoise * HEIGHT_SCALE
+    
+    -- makes terrain higher as you move away from center
+    local distanceHeight = distance * SLOPE_FACTOR
+    
     local totalHeight = noiseHeight + distanceHeight
     return totalHeight
 end
@@ -184,13 +176,6 @@ local function calculateTileDistance(gx, gy)
     return dist
 end
 
--- packages up tile coordinates with distance info
-local function createTileData(gx, gy)
-    local tileDistance = calculateTileDistance(gx, gy)
-    local tileData = {gx, gy, tileDistance}
-    return tileData
-end
-
 -- generates all the tile coordinates we need for the world
 local function generateTileCoordinates()
     local halfCount = math.floor(TILE_COUNT / 2)
@@ -203,7 +188,8 @@ local function generateTileCoordinates()
     
     for gx = startX, endX do
         for gy = startY, endY do
-            local tileData = createTileData(gx, gy)
+            local tileDistance = calculateTileDistance(gx, gy)
+            local tileData = {gx, gy, tileDistance}
             table.insert(tiles, tileData)
         end
     end
@@ -229,19 +215,6 @@ local function calculateWorldPosition(gx, gy)
     local worldX = gx * TILE_SIZE
     local worldZ = gy * TILE_SIZE
     return worldX, worldZ
-end
-
--- gets distance from center
-local function getDistance(x, z)
-    local positionVector = Vector3.new(x, 0, z)
-    local distance3D = positionVector.Magnitude
-    return distance3D
-end
-
--- creates a unique index for each tile
-local function createTileIndex(gx, gy)
-    local indexString = `{gx},{gy}`
-    return indexString
 end
 
 -- adds the height offset to world origin to get final position
@@ -277,8 +250,8 @@ local function extendBottomPart(tile, height)
     bottomPart.CFrame = newCFrame
 end
 
--- finds a random spot on the tile to place debris
-local function getDebrisPosition(tile)
+-- finds a random spot on the tile to place debris and gives it a random pos and rot
+local function getDebrisPositionAndRotation(tile)
     local tileRadius = TILE_SIZE / 2
     local minOffset = -tileRadius
     local maxOffset = tileRadius
@@ -290,28 +263,15 @@ local function getDebrisPosition(tile)
     local tileTopPosition = tileTopAttachment.WorldPosition
     local positionOffset = Vector3.new(randomX, 0, randomZ)
     local finalDebrisPosition = tileTopPosition + positionOffset
-    
-    return finalDebrisPosition
-end
 
--- gives debris a random rotation so it looks natural
-local function getDebrisRotation()
     local minAngle = 0
     local maxAngle = 360
     local randomAngle = math.random(minAngle, maxAngle)
     local rotationCFrame = CFrame.Angles(0, randomAngle, 0)
-    return rotationCFrame
+
+    return finalDebrisPosition, rotationCFrame
 end
 
--- puts the debris on the tile with random position and rotation
-local function placeDebrisOnTile(tile, debris)
-    local debrisPosition = getDebrisPosition(tile)
-    local debrisRotation = getDebrisRotation()
-    local finalDebrisCFrame = CFrame.new(debrisPosition) * debrisRotation
-    
-    debris:PivotTo(finalDebrisCFrame)
-    debris.Parent = tile
-end
 
 -- main function that generates the entire world
 function Service:Generate()
@@ -326,10 +286,11 @@ function Service:Generate()
         local gx = tileData[1]
         local gy = tileData[2]
         local tile = getChunk()
-        local index = createTileIndex(gx, gy)
+        local index = `{gx},{gy}`
 
         local x, z = calculateWorldPosition(gx, gy)
-        local distance = getDistance(x, z)
+        local distance = Vector3.new(x, 0, z).Magnitude
+
         local height = getHeight(gx, gy, SEED, distance)
         local position = calculateFinalPosition(x, height, z)
 
@@ -353,7 +314,11 @@ function Service:Generate()
         local debris = getDebris()
         local hasDebris = debris ~= nil
         if hasDebris then
-            placeDebrisOnTile(tile, debris)
+            local debrisPosition, debrisRotation = getDebrisPositionAndRotation(tile)
+            local finalDebrisCFrame = CFrame.new(debrisPosition) * debrisRotation
+            
+            debris:PivotTo(finalDebrisCFrame)
+            debris.Parent = tile
         end
 
         local biomeName = biome.name
